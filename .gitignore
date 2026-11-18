@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Blender backups
+*.blend1
+*.blend2
+
+# Build output (rebuild with: zip -r dist/blender_action_recorder.zip blender_action_recorder)
+dist/
+
+# Generated data
+samples.jsonl
+episode_*/
+
+# OS
+.DS_Store

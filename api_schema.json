@@ -1,0 +1,823 @@
+[
+  {
+    "name": "set_keys",
+    "kind": "edit",
+    "description": "Insert or update keyframes on one channel (creates the channel if needed).\n    Updating a key's value without giving handles moves its handles with it.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name; use instead of `object` for an unassigned Action."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_euler | rotation_quaternion | rotation_axis_angle | scale, or a custom property written as [\"name\"] (e.g. [\"ik_fk\"])."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Component index (x=0,y=1,z=2; quaternion w=0,x=1,y=2,z=3). Custom properties use 0.",
+          "default": 0
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One keyframe. Only `frame` is required for existing keys; new keys also need `value`. Omitted fields keep their current value (new keys: Blender defaults). Values are raw channel units: radians for rotations.",
+            "properties": {
+              "frame": {
+                "type": "number"
+              },
+              "value": {
+                "type": "number"
+              },
+              "interp": {
+                "type": "string",
+                "enum": [
+                  "CONSTANT",
+                  "LINEAR",
+                  "BEZIER",
+                  "SINE",
+                  "QUAD",
+                  "CUBIC",
+                  "QUART",
+                  "QUINT",
+                  "EXPO",
+                  "CIRC",
+                  "BACK",
+                  "BOUNCE",
+                  "ELASTIC"
+                ]
+              },
+              "hl": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "description": "left handle [frame, value]"
+              },
+              "hr": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "description": "right handle [frame, value]"
+              },
+              "hlt": {
+                "type": "string",
+                "enum": [
+                  "FREE",
+                  "ALIGNED",
+                  "VECTOR",
+                  "AUTO",
+                  "AUTO_CLAMPED"
+                ]
+              },
+              "hrt": {
+                "type": "string",
+                "enum": [
+                  "FREE",
+                  "ALIGNED",
+                  "VECTOR",
+                  "AUTO",
+                  "AUTO_CLAMPED"
+                ]
+              },
+              "easing": {
+                "type": "string",
+                "enum": [
+                  "AUTO",
+                  "EASE_IN",
+                  "EASE_OUT",
+                  "EASE_IN_OUT"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "KEYFRAME",
+                  "BREAKDOWN",
+                  "MOVING_HOLD",
+                  "EXTREME",
+                  "JITTER",
+                  "GENERATED"
+                ]
+              },
+              "amp": {
+                "type": "number"
+              },
+              "back": {
+                "type": "number"
+              },
+              "period": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "frame"
+            ]
+          }
+        },
+        "group": {
+          "type": "string",
+          "description": "Channel group when the channel is created (default: bone name)."
+        },
+        "recalc_handles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Recalculate automatic handles afterwards (what Blender does after an edit)."
+        }
+      },
+      "required": [
+        "channel",
+        "keys"
+      ]
+    }
+  },
+  {
+    "name": "delete_keys",
+    "kind": "edit",
+    "description": "Delete keyframes on one channel by frame list or inclusive range.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name; use instead of `object` for an unassigned Action."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_euler | rotation_quaternion | rotation_axis_angle | scale, or a custom property written as [\"name\"] (e.g. [\"ik_fk\"])."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Component index (x=0,y=1,z=2; quaternion w=0,x=1,y=2,z=3). Custom properties use 0.",
+          "default": 0
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Explicit frame numbers."
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "recalc_handles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Recalculate automatic handles afterwards (what Blender does after an edit)."
+        },
+        "remove_empty_channel": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [
+        "channel"
+      ]
+    }
+  },
+  {
+    "name": "set_key_props",
+    "kind": "edit",
+    "description": "Change interpolation / easing / handle types / key type of existing keys (values untouched).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name; use instead of `object` for an unassigned Action."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_euler | rotation_quaternion | rotation_axis_angle | scale, or a custom property written as [\"name\"] (e.g. [\"ik_fk\"])."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Component index (x=0,y=1,z=2; quaternion w=0,x=1,y=2,z=3). Custom properties use 0.",
+          "default": 0
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Explicit frame numbers."
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "interp": {
+          "type": "string",
+          "enum": [
+            "CONSTANT",
+            "LINEAR",
+            "BEZIER",
+            "SINE",
+            "QUAD",
+            "CUBIC",
+            "QUART",
+            "QUINT",
+            "EXPO",
+            "CIRC",
+            "BACK",
+            "BOUNCE",
+            "ELASTIC"
+          ]
+        },
+        "easing": {
+          "type": "string",
+          "enum": [
+            "AUTO",
+            "EASE_IN",
+            "EASE_OUT",
+            "EASE_IN_OUT"
+          ]
+        },
+        "hlt": {
+          "type": "string",
+          "enum": [
+            "FREE",
+            "ALIGNED",
+            "VECTOR",
+            "AUTO",
+            "AUTO_CLAMPED"
+          ]
+        },
+        "hrt": {
+          "type": "string",
+          "enum": [
+            "FREE",
+            "ALIGNED",
+            "VECTOR",
+            "AUTO",
+            "AUTO_CLAMPED"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "KEYFRAME",
+            "BREAKDOWN",
+            "MOVING_HOLD",
+            "EXTREME",
+            "JITTER",
+            "GENERATED"
+          ]
+        },
+        "amp": {
+          "type": "number"
+        },
+        "back": {
+          "type": "number"
+        },
+        "period": {
+          "type": "number"
+        },
+        "recalc_handles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Recalculate automatic handles afterwards (what Blender does after an edit)."
+        }
+      },
+      "required": [
+        "channel"
+      ]
+    }
+  },
+  {
+    "name": "delete_channel",
+    "kind": "edit",
+    "description": "Remove an animation channel (F-Curve) entirely.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name; use instead of `object` for an unassigned Action."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_euler | rotation_quaternion | rotation_axis_angle | scale, or a custom property written as [\"name\"] (e.g. [\"ik_fk\"])."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Component index (x=0,y=1,z=2; quaternion w=0,x=1,y=2,z=3). Custom properties use 0.",
+          "default": 0
+        }
+      },
+      "required": [
+        "channel"
+      ]
+    }
+  },
+  {
+    "name": "set_channel_props",
+    "kind": "edit",
+    "description": "Set channel-level properties (extrapolation, mute, lock). Recalculates auto handles.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name; use instead of `object` for an unassigned Action."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_euler | rotation_quaternion | rotation_axis_angle | scale, or a custom property written as [\"name\"] (e.g. [\"ik_fk\"])."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Component index (x=0,y=1,z=2; quaternion w=0,x=1,y=2,z=3). Custom properties use 0.",
+          "default": 0
+        },
+        "extrapolation": {
+          "type": "string",
+          "enum": [
+            "CONSTANT",
+            "LINEAR"
+          ]
+        },
+        "mute": {
+          "type": "boolean"
+        },
+        "lock": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "channel"
+      ]
+    }
+  },
+  {
+    "name": "set_pose",
+    "kind": "edit",
+    "description": "Set the current (unkeyed) pose value of a bone or object. Lost on frame change unless keyed;\n    use key_pose or set_keys to keep it.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bone": {
+          "type": "string",
+          "description": "Pose bone name. Omit for object-level channels."
+        },
+        "channel": {
+          "type": "string",
+          "description": "location | rotation_quaternion | rotation_euler | rotation_axis_angle | scale | rotation_mode | [\"custom_prop\"]"
+        },
+        "value": {
+          "description": "number, list of numbers, or rotation mode string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "Set a single component only."
+        }
+      },
+      "required": [
+        "object",
+        "channel",
+        "value"
+      ]
+    }
+  },
+  {
+    "name": "key_pose",
+    "kind": "edit",
+    "description": "Keyframe the bones' current pose values (like pressing I) at `frame`.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "default: location, rotation (current rotation mode), scale"
+        },
+        "frame": {
+          "type": "number",
+          "description": "default: current frame"
+        }
+      },
+      "required": [
+        "object",
+        "bones"
+      ]
+    }
+  },
+  {
+    "name": "set_frame",
+    "kind": "edit",
+    "description": "Go to a frame. Re-evaluates animation, discarding unkeyed pose edits.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "frame": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "frame"
+      ]
+    }
+  },
+  {
+    "name": "set_frame_range",
+    "kind": "edit",
+    "description": "Set the scene (or preview) frame range.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        },
+        "preview": {
+          "type": "boolean",
+          "default": false,
+          "description": "set the preview range instead"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    }
+  },
+  {
+    "name": "assign_action",
+    "kind": "edit",
+    "description": "Assign an Action (created if missing) to an object; null unassigns.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "object",
+        "action"
+      ]
+    }
+  },
+  {
+    "name": "list_objects",
+    "kind": "observe",
+    "description": "Objects in the scene with their type, assigned action and key counts.",
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "list_channels",
+    "kind": "observe",
+    "description": "Animated channels grouped by bone: indices, key count, frame range, interpolations.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "object"
+      ]
+    }
+  },
+  {
+    "name": "get_keys",
+    "kind": "observe",
+    "description": "Keyframes of one channel: frame, value, interpolation (+ handles and types if asked).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bone": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "omit for all components"
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "with_handles": {
+          "type": "boolean",
+          "default": false
+        },
+        "max_keys": {
+          "type": "integer",
+          "default": 200
+        }
+      },
+      "required": [
+        "object",
+        "channel"
+      ]
+    }
+  },
+  {
+    "name": "sample_curves",
+    "kind": "observe",
+    "description": "Evaluated channel values per frame (local space, from the curves; no rig evaluation).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "step": {
+          "type": "integer",
+          "default": 1
+        }
+      },
+      "required": [
+        "object"
+      ]
+    }
+  },
+  {
+    "name": "get_pose",
+    "kind": "observe",
+    "description": "Current pose values (including unkeyed edits) of bones.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "object"
+      ]
+    }
+  },
+  {
+    "name": "sample_world",
+    "kind": "observe",
+    "description": "World-space bone positions per frame (full rig evaluation: constraints, IK, parents).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "step": {
+          "type": "integer",
+          "default": 1
+        },
+        "point": {
+          "type": "string",
+          "enum": [
+            "head",
+            "tail"
+          ],
+          "default": "head"
+        }
+      },
+      "required": [
+        "object",
+        "bones"
+      ]
+    }
+  },
+  {
+    "name": "detect_issues",
+    "kind": "observe",
+    "description": "Find common motion problems: foot sliding, jitter, euler/quaternion flips, pops, ground penetration.\n    Thresholds are in scene units; tune them for the character's scale.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object name (usually the armature). Its assigned Action is edited."
+        },
+        "frame_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [start, end] frame range."
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "foot_sliding",
+              "jitter",
+              "rotation_flip",
+              "pop",
+              "below_ground"
+            ]
+          },
+          "description": "default: all that apply"
+        },
+        "bones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "bones for jitter/flip/pop checks (default: all animated / all deform bones)"
+        },
+        "feet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "default: guessed from names"
+        },
+        "ground_z": {
+          "type": "number",
+          "description": "ground height; default: lowest foot point in range"
+        },
+        "contact_height": {
+          "type": "number",
+          "default": 0.03
+        },
+        "slide_speed": {
+          "type": "number",
+          "default": 0.004,
+          "description": "units per frame while in contact"
+        },
+        "jitter_rot": {
+          "type": "number",
+          "default": 0.05,
+          "description": "rad/frame^2"
+        },
+        "jitter_loc": {
+          "type": "number",
+          "default": 0.01,
+          "description": "units/frame^2"
+        },
+        "flip_threshold": {
+          "type": "number",
+          "default": 2.5,
+          "description": "rad jump between frames"
+        },
+        "pop_factor": {
+          "type": "number",
+          "default": 6.0
+        },
+        "pop_min": {
+          "type": "number",
+          "default": 0.05
+        },
+        "max_issues": {
+          "type": "integer",
+          "default": 30
+        }
+      },
+      "required": [
+        "object"
+      ]
+    }
+  }
+]
